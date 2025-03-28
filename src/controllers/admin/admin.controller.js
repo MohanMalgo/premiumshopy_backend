@@ -18,6 +18,7 @@ import {
 } from "../../services/common.js";
 import product from "../../models/product.js";
 import Product from "../../models/product.js";
+import Trending from "../../models/trending.js";
 
 export const signinAdmin = async (req, res) => {
   const { email, password } = req.body;
@@ -364,9 +365,9 @@ export const createProduct = async (req, res) => {
 
     console.log("Parsed imageSet:", imageSet);
 
-    // Upload images and format data
+    // Process images and extract other nested fields
     const images = await Promise.all(
-      Object.values(imageSet).map(async (imageData, index) => {
+      Object.entries(imageSet).map(async ([index, imageData]) => {
         const imageUrls = await multipleImageUpload(
           [
             imageData.image,
@@ -374,19 +375,19 @@ export const createProduct = async (req, res) => {
             imageData.rightviewimage,
             imageData.rotateviewimage,
           ].filter(Boolean)
-        ); // Filter out undefined values
+        ); // Upload only available images
+
+        // Extract color & gender properly
+        const colorKey = `images[${index}][color]`;
+        const genderKey = `images[${index}][gender]`;
 
         return {
           image: imageUrls[0] || "",
           leftviewimage: imageUrls[1] || imageUrls[0] || "",
           rightviewimage: imageUrls[2] || imageUrls[0] || "",
           rotateviewimage: imageUrls[3] || imageUrls[0] || "",
-          color: Array.isArray(req.body.colors)
-            ? req.body.colors[index]
-            : req.body.colors || "default",
-          gender: Array.isArray(req.body.genders)
-            ? req.body.genders[index]
-            : req.body.genders || "unisex",
+          color: req.body[colorKey] || "default",
+          gender: req.body[genderKey] || "unisex",
         };
       })
     );
@@ -397,14 +398,13 @@ export const createProduct = async (req, res) => {
     const parsedDate = date ? new Date(date) : new Date();
     const parsedActualPrice = Number(actualPrice);
     const parsedDiscountPrice = Number(discountPrice);
-    const parsedThickness = thickness;
     const parsedWaterResistant = waterResistant === "true"; // Convert to boolean
 
     // Validate numeric fields
     if (isNaN(parsedActualPrice) || isNaN(parsedDiscountPrice)) {
       return res
         .status(400)
-        .json({ error: "Price and thickness must be valid numbers" });
+        .json({ error: "actualPrice and discountPrice must be valid numbers" });
     }
 
     // Create product
@@ -416,7 +416,7 @@ export const createProduct = async (req, res) => {
       discountPrice: parsedDiscountPrice,
       offer,
       caseMaterial,
-      thickness: parsedThickness,
+      thickness,
       waterResistant: parsedWaterResistant,
       brand,
       category,
@@ -531,10 +531,10 @@ export const getProduct = async (req, res) => {
   }
 };
 
-export const getOfferById = async (req, res) => {
+export const getProductById = async (req, res) => {
   try {
     const { id } = req.body;
-    const offer = await Offer.findById(id);
+    const offer = await product.findById(id);
     if (!offer) {
       return res
         .status(404)
@@ -552,49 +552,82 @@ export const updateOffer = async (req, res) => {
       offerid,
       date,
       title,
-      categories,
+      category,
       actualPrice,
       discountPrice,
-      collectionName,
+      caseMaterial,
+      thickness,
+      waterResistant,
+      brand,
+      timer,
+      offer,
+      images, // Incoming images from req.body
     } = req.body;
+
+    // Function to remove extra quotes
+    const cleanString = (value) =>
+      typeof value === "string" ? value.replace(/^"+|"+$/g, "") : value;
+
+    // Normalize fields before updating
     let updateData = {
       date,
-      title,
-      categories,
+      title: cleanString(title),
+      category: cleanString(category),
       actualPrice,
       discountPrice,
-      collectionName,
+      caseMaterial: cleanString(caseMaterial),
+      thickness: cleanString(thickness),
+      waterResistant: waterResistant === "true", // Convert to boolean
+      brand: cleanString(brand),
+      timer: timer === "true", // Convert to boolean
+      offer: cleanString(offer),
     };
 
-    // Handle file upload if new image is provided
-    if (req.files && req.files.image) {
-      const image = req.files.image;
+    // Handle image uploads if new files are provided
+    let updatedImages = [];
+    if (req.files && Object.keys(req.files).length > 0) {
+      for (const key in req.files) {
+        const image = req.files[key];
 
-      // Optional: Validate image type
-      const allowedMimeTypes = [
-        "image/jpeg",
-        "image/png",
-        "image/gif",
-        "image/webp",
-        "image/svg+xml",
-      ];
-      if (!allowedMimeTypes.includes(image.mimetype)) {
-        return res
-          .status(400)
-          .json({ message: "Invalid image format", status: false });
+        // Validate image type
+        const allowedMimeTypes = [
+          "image/jpeg",
+          "image/png",
+          "image/gif",
+          "image/webp",
+          "image/svg+xml",
+        ];
+        if (!allowedMimeTypes.includes(image.mimetype)) {
+          return res
+            .status(400)
+            .json({ message: "Invalid image format", status: false });
+        }
+
+        const uploadedImage = await uploadFile(
+          image.name,
+          image.data,
+          image.mimetype
+        );
+        updatedImages.push({ image: uploadedImage });
       }
-
-      updateData.image = await uploadFile(
-        image.name,
-        image.data,
-        image.mimetype
-      );
     }
 
-    // Find and update the offer, returning the updated document
-    const updatedOffer = await Offer.findByIdAndUpdate(offerid, updateData, {
+    // If images exist in req.body (old images), merge them
+    if (images && typeof images === "string") {
+      try {
+        updatedImages = [...updatedImages, ...JSON.parse(images)];
+      } catch (err) {
+        console.error("Error parsing images from req.body:", err);
+        return res.status(400).json({ message: "Invalid images format" });
+      }
+    }
+
+    updateData.images = updatedImages.length > 0 ? updatedImages : undefined;
+
+    // Update the offer in the database
+    const updatedOffer = await product.findByIdAndUpdate(offerid, updateData, {
       new: true, // Return the updated document
-      runValidators: true, // Ensure schema validation
+      runValidators: true, // Validate schema
     });
 
     if (!updatedOffer) {
@@ -606,13 +639,14 @@ export const updateOffer = async (req, res) => {
     res.status(200).json({
       message: "Offer updated successfully",
       status: true,
-      data: updatedOffer, // Now correctly returning the updated document
+      data: updatedOffer,
     });
   } catch (error) {
     console.error("Error updating offer:", error);
     res.status(500).json({ error: error.message, status: false });
   }
 };
+
 
 export const deleteOffer = async (req, res) => {
   try {
@@ -630,6 +664,132 @@ export const deleteOffer = async (req, res) => {
     res.status(500).json({ error: error.message, status: false });
   }
 };
+
+export const createTrending = async (req, res) => {
+  try {
+    console.log("Incoming request body:", req.body);
+    console.log("Incoming request files:", req.files);
+
+    const {
+      date,
+      title,
+      actualPrice,
+      discountPrice,
+      offer,
+      caseMaterial,
+      thickness,
+      waterResistant,
+      brand,
+      caseDiameter,
+      dialColor,
+      movementType,
+      watchCode,
+    } = req.body;
+
+    // Ensure at least one image is provided
+    if (!req.files || Object.keys(req.files).length === 0) {
+      return res.status(400).json({ error: "At least one image is required" });
+    }
+
+    // Extract images based on their structure
+    const imageSet = {};
+    Object.keys(req.files).forEach((key) => {
+      const match = key.match(/images\[(\d+)\]\[(\w+)\]/); // Match `images[index][key]`
+      if (match) {
+        const [, index, field] = match;
+        if (!imageSet[index]) imageSet[index] = {}; // Initialize if not exists
+        imageSet[index][field] = req.files[key]; // Assign file to correct field
+      }
+    });
+
+    console.log("Parsed imageSet:", imageSet);
+
+    // Process images and extract other nested fields
+    const images = await Promise.all(
+      Object.entries(imageSet).map(async ([index, imageData]) => {
+        const imageUrls = await multipleImageUpload(
+          [
+            imageData.image,
+            imageData.leftviewimage,
+            imageData.rightviewimage,
+            imageData.rotateviewimage,
+          ].filter(Boolean)
+        ); // Upload only available images
+
+        // Extract color & gender properly
+        const colorKey = `images[${index}][color]`;
+        const genderKey = `images[${index}][gender]`;
+
+        return {
+          image: imageUrls[0] || "",
+          leftviewimage: imageUrls[1] || imageUrls[0] || "",
+          rightviewimage: imageUrls[2] || imageUrls[0] || "",
+          rotateviewimage: imageUrls[3] || imageUrls[0] || "",
+          color: req.body[colorKey] || "default",
+          gender: req.body[genderKey] || "unisex",
+        };
+      })
+    );
+
+    console.log("Uploaded images:", images);
+
+    // Parse and validate data
+    const parsedDate = date ? new Date(date) : new Date();
+    const parsedActualPrice = Number(actualPrice);
+    const parsedDiscountPrice = Number(discountPrice);
+    const parsedWaterResistant = waterResistant === "true"; // Convert to boolean
+
+    // Validate numeric fields
+    if (isNaN(parsedActualPrice) || isNaN(parsedDiscountPrice)) {
+      return res
+        .status(400)
+        .json({ error: "actualPrice and discountPrice must be valid numbers" });
+    }
+
+    // Create product
+    const newProduct = await Trending.create({
+      images,
+      date: parsedDate,
+      title,
+      actualPrice: parsedActualPrice,
+      discountPrice: parsedDiscountPrice,
+      offer,
+      caseMaterial,
+      thickness,
+      waterResistant: parsedWaterResistant,
+      brand,
+      caseDiameter,
+      dialColor,
+      movementType,
+      watchCode,
+    });
+
+    console.log("New Product created:", newProduct);
+
+    res.status(201).json({
+      message: "Trending Product created successfully",
+      status: true,
+      product: newProduct,
+    });
+  } catch (error) {
+    console.error("Error creating Product:", error);
+    res
+      .status(500)
+      .json({ error: "Internal server error", details: error.message });
+  }
+};
+
+export const getTrending = async (req, res) => {
+  try {
+    const offers = await Trending.find();
+    res.status(200).json({ status: true, offers });
+  } catch (error) {
+    res.status(500).json({ error: error.message, status: false });
+  }
+};
+
+
+
 
 export const adminHistoryss = async (req, res) => {
   try {

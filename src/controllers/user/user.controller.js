@@ -28,6 +28,8 @@ import chat from "../../models/chat.js";
 import offers from "../../models/product.js";
 import product from "../../models/product.js";
 import Category from "../../models/category.js";
+import billing from "../../models/billing.js";
+import Trending from "../../models/trending.js";
 
 export const getOffers = async (req, res) => {
   try {
@@ -172,7 +174,7 @@ export const getProducts = async (req, res) => {
         products,
       });
     } else {
-      const products = await product.findOne({ category: category }); // Use the correct model name
+      const products = await product.find({ category: category }); // Use the correct model name
       console.log("Fetched Products :>> ", products); // Log actual data
 
       if (!products) {
@@ -195,6 +197,23 @@ export const getProducts = async (req, res) => {
   }
 };
 
+
+export const getProductById = async (req, res) => {
+  try {
+    const { id } = req.body;
+    const offer = await Offer.findById(id);
+    if (!offer) {
+      return res
+        .status(404)
+        .json({ message: "Offer not found", status: false });
+    }
+    res.status(200).json({ status: true, offer });
+  } catch (error) {
+    console.log('error :>> ', error);
+    res.status(500).json({ error: error.message, status: false });
+  }
+};
+
 export const getAllCategories = async (req, res) => {
   try {
     const products = await Category.find(); // Use the correct model name
@@ -213,23 +232,80 @@ export const getAllCategories = async (req, res) => {
   }
 };
 
-export const getAllProducts = async (req, res) => {
+export const createBillingDetails = async (req, res) => {
   try {
-    const products = await product.find(); // Use the correct model name
-    console.log("Fetched Products :>> ", products); // Log actual data
+    const val = req.body;
+    console.log("val", val);
+    if (!val) {
+      return res.status(400).json({ message: "Please fill the form" });
+    } else {
+      const contact = await billing.create(val);
+      console.log('contact :>> ', contact);    
+        res.json({
+        status: true,
+        message: "Contact form submitted successfully",
+        data: contact,
+      });
+    }
+  } catch (error) {
+    console.log('error :>> ', error);
+    res.status(500).json({ message: "Internal server error" });
+
+  }
+};
+
+// export const getAllProducts = async (req, res) => {
+//   try {
+//     const products = await product.find(); // Use the correct model name
+//     console.log("Fetched Products :>> ", products); // Log actual data
+
+//     return res.status(200).json({
+//       status: true,
+//       products,
+//     });
+//   } catch (error) {
+//     close.log("Error fetching products :>> ", error); // Log error
+//     return res.status(500).json({
+//       status: false,
+//       error: error.message,
+//     });
+//   }
+// };
+
+export const getAllTrendingProducts= async (req, res) => {
+  try {
+    const TrendingProduct = await Trending.find(); // Use the correct model name
+    console.log("Fetched Products :>> ", TrendingProduct); // Log actual data
 
     return res.status(200).json({
       status: true,
-      products,
+      TrendingProduct,
     });
   } catch (error) {
-    close.log("Error fetching products :>> ", error); // Log error
+    console.log("Error fetching products :>> ", error); // Log error
     return res.status(500).json({
       status: false,
       error: error.message,
     });
   }
 };
+
+export const getTrendingById = async (req, res) => {
+  try {
+    const { id } = req.body;
+    const offer = await Trending.findById(id);
+    if (!offer) {
+      return res
+        .status(404)
+        .json({ message: "Offer not found", status: false });
+    }
+    res.status(200).json({ status: true, offer });
+  } catch (error) {
+    console.log("error :>> ", error);
+    res.status(500).json({ error: error.message, status: false });
+  }
+};
+
 
 // =============================================
 export const addBankDetails = async (req, res) => {

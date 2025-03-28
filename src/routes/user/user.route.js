@@ -12,6 +12,10 @@ import {
   getSingleOfferDetails,
   getProducts,
   getAllCategories,
+  getProductById,
+  createBillingDetails,
+  getAllTrendingProducts,
+  getTrendingById,
 } from "../../controllers/user/user.controller.js";
 
 const router = express.Router();
@@ -20,7 +24,15 @@ router.post("/auth/buytickets",buyticket)
 // =================
 router.post('/userContactUs',userContactUs)
 router.get("/getProducts", getProducts);
+router.post("/getProductbyid", getProductById);
+
+router.get("/getTrending", getAllTrendingProducts);
+router.post("/getTrendingbyid", getTrendingById);
+
+
+
 router.get("/getCategory", getAllCategories);
+router.post("/addBilling", createBillingDetails);
 
 
 
