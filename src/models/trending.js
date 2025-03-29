@@ -24,6 +24,9 @@ const TrendingSchema = new mongoose.Schema({
   dialColor: String,
   movementType: String,
   watchCode: String,
+  materialType: String,
+  bgcolor: String,
+  textcolor: String,
 });
 
 const Trending = mongoose.model("Trending", TrendingSchema);

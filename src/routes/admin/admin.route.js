@@ -5,6 +5,7 @@ import {
   createProduct,
   createTrending,
   deleteOffer,
+  deleteTrending,
   forgotPassword,
   getAllCategory,
   getAllUser,
@@ -17,8 +18,10 @@ import {
   signinAdmin,
   singleAdminHistoryss,
   updateOffer,
+  updateTrending,
   verifyResetOTP,
 } from "../../controllers/admin/admin.controller.js";
+import { getTrendingById } from "../../controllers/user/user.controller.js";
 
 const router = express.Router();
 
@@ -38,6 +41,9 @@ router.post("/deleteoffer", deleteOffer);
 
 router.post("/createTrending", createTrending);
 router.get("/getTrending", getTrending);
+router.post("/getTrendingbyid", getTrendingById);
+router.post("/updateTrending", updateTrending);
+router.post("/deleteTrending", deleteTrending);
 
 
 

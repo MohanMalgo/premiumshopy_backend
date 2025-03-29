@@ -345,6 +345,7 @@ export const createProduct = async (req, res) => {
       brand,
       category,
       timer,
+      bgcolor,
     } = req.body;
 
     // Ensure at least one image is provided
@@ -421,6 +422,7 @@ export const createProduct = async (req, res) => {
       brand,
       category,
       timer,
+      bgcolor,
     });
 
     console.log("New Product created:", newProduct);
@@ -524,7 +526,7 @@ export const createProduct = async (req, res) => {
 
 export const getProduct = async (req, res) => {
   try {
-    const offers = await product.find();
+    const offers = await product.find().sort({_id:-1});
     res.status(200).json({ status: true, offers });
   } catch (error) {
     res.status(500).json({ error: error.message, status: false });
@@ -651,7 +653,7 @@ export const updateOffer = async (req, res) => {
 export const deleteOffer = async (req, res) => {
   try {
     const { id } = req.body;
-    const offer = await Offer.findByIdAndDelete(id);
+    const offer = await Product.findByIdAndDelete(id);
     if (!offer) {
       return res
         .status(404)
@@ -684,6 +686,9 @@ export const createTrending = async (req, res) => {
       dialColor,
       movementType,
       watchCode,
+      materialType,
+      bgcolor,
+      textcolor,
     } = req.body;
 
     // Ensure at least one image is provided
@@ -762,6 +767,9 @@ export const createTrending = async (req, res) => {
       dialColor,
       movementType,
       watchCode,
+      materialType,
+      bgcolor,
+      textcolor,
     });
 
     console.log("New Product created:", newProduct);
@@ -781,15 +789,155 @@ export const createTrending = async (req, res) => {
 
 export const getTrending = async (req, res) => {
   try {
-    const offers = await Trending.find();
+    const offers = await Trending.find().sort({_id:-1});
     res.status(200).json({ status: true, offers });
   } catch (error) {
     res.status(500).json({ error: error.message, status: false });
   }
 };
 
+export const getTrendingById = async (req, res) => {
+  try {
+    const { id } = req.body;
+    const trending = await Trending.findById(id);
+    if (!trending) {
+      return res
+        .status(404)
+        .json({ message: "Offer not found", status: false });
+    }
+    res.status(200).json({ status: true, trending });
+  } catch (error) {
+    res.status(500).json({ error: error.message, status: false });
+  }
+};
 
+export const updateTrending = async (req, res) => {
+  try {
+    const {
+      offerid,
+      date,
+      title,
+      category,
+      actualPrice,
+      discountPrice,
+      caseMaterial,
+      thickness,
+      waterResistant,
+      brand,
+caseDiameter,
+dialColor,
+movementType,
+watchCode,
+      offer,
+      bgcolor,
+      textcolor,
+      images, // Incoming images from req.body
+    } = req.body;
 
+    // Function to remove extra quotes
+    const cleanString = (value) =>
+      typeof value === "string" ? value.replace(/^"+|"+$/g, "") : value;
+
+    // Normalize fields before updating
+    let updateData = {
+      date,
+      title: cleanString(title),
+      category: cleanString(category),
+      actualPrice: cleanString(actualPrice),
+      discountPrice: cleanString(discountPrice),
+      caseMaterial: cleanString(caseMaterial),
+      thickness: cleanString(thickness),
+      waterResistant: cleanString(brand),
+      brand: cleanString(brand),
+      caseDiameter: cleanString(caseDiameter),
+      dialColor: cleanString(dialColor),
+      movementType: cleanString(movementType),
+      watchCode: cleanString(watchCode),
+      offer: cleanString(offer),
+      bgcolor: cleanString(bgcolor),
+      textcolor: cleanString(textcolor),
+    };
+
+    // Handle image uploads if new files are provided
+    let updatedImages = [];
+    if (req.files && Object.keys(req.files).length > 0) {
+      for (const key in req.files) {
+        const image = req.files[key];
+
+        // Validate image type
+        const allowedMimeTypes = [
+          "image/jpeg",
+          "image/png",
+          "image/gif",
+          "image/webp",
+          "image/svg+xml",
+        ];
+        if (!allowedMimeTypes.includes(image.mimetype)) {
+          return res
+            .status(400)
+            .json({ message: "Invalid image format", status: false });
+        }
+
+        const uploadedImage = await uploadFile(
+          image.name,
+          image.data,
+          image.mimetype
+        );
+        updatedImages.push({ image: uploadedImage });
+      }
+    }
+
+    // If images exist in req.body (old images), merge them
+    if (images && typeof images === "string") {
+      try {
+        updatedImages = [...updatedImages, ...JSON.parse(images)];
+      } catch (err) {
+        console.error("Error parsing images from req.body:", err);
+        return res.status(400).json({ message: "Invalid images format" });
+      }
+    }
+
+    updateData.images = updatedImages.length > 0 ? updatedImages : undefined;
+
+    // Update the offer in the database
+    const updatedOffer = await Trending.findByIdAndUpdate(offerid, updateData, {
+      new: true, // Return the updated document
+      runValidators: true, // Validate schema
+    });
+
+    if (!updatedOffer) {
+      return res
+        .status(404)
+        .json({ message: "Offer not found", status: false });
+    }
+
+    res.status(200).json({
+      message: "Offer updated successfully",
+      status: true,
+      data: updatedOffer,
+    });
+  } catch (error) {
+    console.error("Error updating offer:", error);
+    res.status(500).json({ error: error.message, status: false });
+  }
+};
+
+export const deleteTrending = async (req, res) => {
+  try {
+    const { id } = req.body;
+    const offer = await Trending.findByIdAndDelete(id);
+    if (!offer) {
+      return res
+        .status(404)
+        .json({ message: "Trending  not found", status: false });
+    }
+    res
+      .status(200)
+      .json({ message: "Tremding Product deleted successfully", status: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message, status: false });
+  }
+};
 
 export const adminHistoryss = async (req, res) => {
   try {
