@@ -10,6 +10,8 @@ import {
   getAllCategory,
   getAllUser,
   getDashCount,
+  getOrdersList,
+  getOrdersListUpdate,
   getProduct,
   getProductById,
   getTrending,
@@ -54,4 +56,6 @@ router.get("/getAllCategories", getAllCategory);
 
 router.get("/adminHistory", adminHistoryss);
 router.post("/singleAdminHistoryss", singleAdminHistoryss);
+router.get('/getOrdersList',getOrdersList);
+router.post('/getOrdersListUpdate',getOrdersListUpdate)
 export default router;

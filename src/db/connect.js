@@ -5,15 +5,7 @@ console.log("MONGO_URI", MONGO_URI)
 // Load environment variables
 dotenv.config();
 
-// const connectDB = async () => {
-//     try {
-//         const conn = await mongoose.connect(MONGO_URI);
-//         console.log(`MongoDB Connected: ${conn.connection.host}`);
-//     } catch (error) {
-//         console.error(`Error: ${error.message}`);
-//         process.exit(1);
-//     }
-// };
+
 const connectDB = async () => {
     try {
         await mongoose.connect(MONGO_URI, {
@@ -27,3 +19,4 @@ const connectDB = async () => {
     }
 };
 export default connectDB;
+

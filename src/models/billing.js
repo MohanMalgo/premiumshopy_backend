@@ -18,6 +18,14 @@ const billingSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    productId: { type: String, default: "" },
+    TotalItems: { type: String, default: "" },
+    Delivery: { type: String, default: "" },
+    SubTotal: { type: String, default: "" },
+    amount: { type: String, default: "" },
+    paymentStatus: { type: Boolean, default: false },
+    orderId: { type: String, default: "" },
+    Dispatched:{ type: String, default: ""},
     address: [
       {
         flatNo: {
@@ -38,9 +46,21 @@ const billingSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    type: {
+      type: String,
+      default: ""
+    },
     state: {
       type: String,
-      required: true,
+      
+    },
+    status:{
+      type: Boolean,
+      default:false
+    },
+    signature: {
+      type: String,
+      default: ""
     },
     pinCode: {
       type: Number,

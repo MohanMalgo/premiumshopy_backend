@@ -16,6 +16,7 @@ import {
   createBillingDetails,
   getAllTrendingProducts,
   getTrendingById,
+  confirmPurchase,
 } from "../../controllers/user/user.controller.js";
 
 const router = express.Router();
@@ -33,7 +34,7 @@ router.post("/getTrendingbyid", getTrendingById);
 
 router.get("/getCategory", getAllCategories);
 router.post("/addBilling", createBillingDetails);
-
+router.post('/confirmPurchase',confirmPurchase)
 
 
 

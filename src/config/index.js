@@ -1,4 +1,6 @@
-export const MONGO_URI = "mongodb://localhost:27017/Watch";
+export const MONGO_URI = "mongodb+srv://vinithmalgotech:IZD4MOTpAPTK4ODV@watch.3wlzmn4.mongodb.net/Watch";
+// mongodb+srv://<username>:<password>@cluster0.abcd.mongodb.net/Watch?retryWrites=true&w=majority
+
 export const BACKEND_PORT = 3005;
 export const JWT_SECRET = "MHN@VNTHMCVS24go";
 export const TWILIO_ACCOUNT_SID = "ACd37a4682d57cfd5d73f06cff4d1df27c";
