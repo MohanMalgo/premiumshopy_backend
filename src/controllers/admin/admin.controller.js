@@ -23,6 +23,7 @@ import billing from "../../models/billing.js";
 
 export const signinAdmin = async (req, res) => {
   const { email, password } = req.body;
+  console.log("req.body",req.body)
   if (!email) {
     return res.status(400).json({ message: "Email is required" });
   }
@@ -39,33 +40,34 @@ export const signinAdmin = async (req, res) => {
     // if (!isPasswordValid) {
     //   return res.status(400).json({ message: "Incorrect password" });
     // }
-    const token = generateJWT({ id: admin._id });
-    if (!token) {
-      return res.status(400).json({ message: "Not get Token" });
-    } else {
-      let ipAddress = await getIPAddress(req);
-      ipAddress = await getPublicIP();
-      let geo = await getLocation(ipAddress);
-      const parser = new UAParser();
-      parser.setUA(req.headers["user-agent"]);
-      const result = parser.getResult();
-      let obj = {
-        email: email,
-        browser_name: result.browser.name || "Unknown",
-        ip_address: ipAddress,
-        os: result.os.name
-          ? `${result.os.name} ${result.os.version}`
-          : "Unknown",
-        device: result.device.type || "Desktop",
-        country: geo.country,
-        region: geo.region,
-        city: geo.city,
-        regionName: geo.regionName,
-      };
-      await adminHistory.create(obj);
-      console.log("obj :>> ", obj);
-      return res.json({ status: true, message: "Login successful", token });
-    }
+    const token = generateJWT({ id: email });
+    // if (!token) {
+    //   return res.status(400).json({ message: "Not get Token" });
+    // }
+    //  else {
+    //   let ipAddress = await getIPAddress(req);
+    //   ipAddress = await getPublicIP();
+    //   let geo = await getLocation(ipAddress);
+    //   const parser = new UAParser();
+    //   parser.setUA(req.headers["user-agent"]);
+    //   const result = parser.getResult();
+    //   let obj = {
+    //     email: email,
+    //     browser_name: result.browser.name || "Unknown",
+    //     ip_address: ipAddress,
+    //     os: result.os.name
+    //       ? `${result.os.name} ${result.os.version}`
+    //       : "Unknown",
+    //     device: result.device.type || "Desktop",
+    //     country: geo.country,
+    //     region: geo.region,
+    //     city: geo.city,
+    //     regionName: geo.regionName,
+    //   };
+    //   await adminHistory.create(obj);
+    //   console.log("obj :>> ", obj);
+      return res.json({ status: true, message: "Login successful" });
+    // }
   } catch (error) {
     console.log("error :>> ", error);
     return res.json({ status: false, message: "Internal server error" });
@@ -564,7 +566,7 @@ export const updateOffer = async (req, res) => {
       brand,
       timer,
       offer,
-      images, // Incoming images from req.body
+      images, 
     } = req.body;
 
     // Function to remove extra quotes
